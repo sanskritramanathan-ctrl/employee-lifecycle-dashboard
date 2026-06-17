@@ -423,7 +423,7 @@ const REF=new Date(2024,11,31);
 function tenureYrs(join,exit){return Math.round((((exit||REF)-join)/(1000*60*60*24*365)))*10/10;}
 
 const employees=Array.from({length:200},(_,i)=>{
-  const dept=pick(DEPTS),status=wPick(STATUSES,[75,15,10]);
+  const dept=pick(DEPTS),status=wPick(STATUSES,[85,15]);
   const join=randDate(2018,2023);
   const exit=status==="Inactive"?randDate(join.getFullYear()+1,2024):null;
   return {
