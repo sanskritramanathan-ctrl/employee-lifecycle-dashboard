@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Lifecycle Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f7f8fa;
+    --border: #e2e6ec;
+    --text-primary: #1a2332;
+    --text-secondary: #5a6a7e;
+    --text-muted: #8a9ab0;
+    --blue: #2563eb;
+    --teal: #0d9488;
+    --red: #dc2626;
+    --amber: #d97706;
+    --purple: #7c3aed;
+    --green: #16a34a;
+    --coral: #e05a30;
+    --pink: #be185d;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 32px; height: 32px; background: var(--blue);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  }
+  .header-logo svg { width: 18px; height: 18px; }
+  .header-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .header-sub { font-size: 12px; color: var(--text-muted); }
+  .header-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: #eff6ff; color: var(--blue); font-weight: 500;
+    border: 1px solid #bfdbfe;
+  }
+
+  /* LAYOUT */
+  .main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* FILTERS */
+  .filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filter-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-right: 4px; }
+  .filter-bar select {
+    font-size: 12px;
+    padding: 6px 28px 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--text-primary);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9ab0'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.15s;
+  }
+  .filter-bar select:hover { border-color: var(--blue); }
+  .filter-bar select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .reset-btn {
+    margin-left: auto;
+    font-size: 12px; padding: 6px 14px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--text-secondary);
+    cursor: pointer; font-weight: 500; transition: all 0.15s;
+  }
+  .reset-btn:hover { background: var(--bg); border-color: var(--text-secondary); }
+  .filter-count {
+    font-size: 11px; color: var(--text-muted);
+    padding: 4px 10px; background: var(--bg); border-radius: 20px;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-top: 3px solid var(--accent-color);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kpi-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; color: var(--text-secondary); }
+  .kpi-change { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; }
+  .kpi-change.up { color: var(--green); }
+  .kpi-change.down { color: var(--red); }
+
+  /* CHART GRID */
+  .chart-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .card-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* LEGEND */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 10px; font-size: 11px; color: var(--text-secondary);
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* TABLE */
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 20px; }
+  .table-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .table-meta { font-size: 11px; color: var(--text-muted); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 10px 14px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td {
+    padding: 9px 14px; font-size: 12px;
+    color: var(--text-primary); white-space: nowrap;
+  }
+  .id-cell { color: var(--text-muted); font-family: monospace; font-size: 11px; }
+
+  /* STATUS BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  .badge-active { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .badge-active::before { background: #16a34a; }
+  .badge-inactive { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .badge-inactive::before { background: #dc2626; }
+  .badge-leave { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .badge-leave::before { background: #d97706; }
+
+  /* PERF STARS */
+  .perf-bar { display: flex; gap: 2px; align-items: center; }
+  .perf-pip { width: 14px; height: 4px; border-radius: 2px; background: var(--border); }
+  .perf-pip.filled { background: var(--amber); }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .main { padding: 12px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .header-sub { display: none; }
+  }
+
+  /* CHART CANVAS */
+  .chart-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg fill="none" viewBox="0 0 18 18" stroke="white" stroke-width="2">
+        <rect x="2" y="10" width="3" height="6" rx="1"/>
+        <rect x="7.5" y="6" width="3" height="10" rx="1"/>
+        <rect x="13" y="2" width="3" height="14" rx="1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Employee Lifecycle Dashboard</div>
+      <div class="header-sub">People Analytics · FY 2024</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="last-updated" class="filter-count">200 employees</span>
+    <span class="header-badge">Dummy Data · Portfolio</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- FILTERS -->
+  <div class="filter-bar">
+    <span class="filter-label">Filter</span>
+    <select id="f-dept"><option value="">All departments</option></select>
+    <select id="f-status"><option value="">All statuses</option></select>
+    <select id="f-gender"><option value="">All genders</option></select>
+    <select id="f-location"><option value="">All locations</option></select>
+    <select id="f-emptype"><option value="">All types</option></select>
+    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--accent-color:#2563eb">
+      <div class="kpi-label">Total employees</div>
+      <div class="kpi-value" id="k-total">—</div>
+      <div class="kpi-sub" id="k-total-s"></div>
+    </div>
+    <div class="kpi-card" style="--accent-color:#0d9488">
+      <div class="kpi-label">Active</div>
+      <div class="kpi-value" id="k-active">—</div>
+      <div class="kpi-sub" id="k-active-s"></div>
+    </div>
+    <div class="kpi-card" style="--accent-color:#dc2626">
+      <div class="kpi-label">Attrition rate</div>
+      <div class="kpi-value" id="k-attr">—</div>
+      <div class="kpi-sub" id="k-attr-s"></div>
+    </div>
+    <div class="kpi-card" style="--accent-color:#d97706">
+      <div class="kpi-label">Avg tenure</div>
+      <div class="kpi-value" id="k-tenure">—</div>
+      <div class="kpi-sub" id="k-tenure-s"></div>
+    </div>
+    <div class="kpi-card" style="--accent-color:#7c3aed">
+      <div class="kpi-label">Avg age</div>
+      <div class="kpi-value" id="k-age">—</div>
+      <div class="kpi-sub" id="k-age-s"></div>
+    </div>
+    <div class="kpi-card" style="--accent-color:#16a34a">
+      <div class="kpi-label">High performers</div>
+      <div class="kpi-value" id="k-hp">—</div>
+      <div class="kpi-sub" id="k-hp-s"></div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Dept headcount + Monthly trend -->
+  <div class="chart-grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Headcount by department</div></div>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c-dept" role="img" aria-label="Bar chart of headcount by department"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Monthly hiring vs exits</div><div class="card-sub">Jan 2023 – Dec 2024</div></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#0d9488"></span>Hires</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#dc2626;opacity:0.7"></span>Exits</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c-monthly" role="img" aria-label="Line chart of monthly hires and exits"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Perf + Gender + Location -->
+  <div class="chart-grid-3">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Performance distribution</div></div>
+      <div class="chart-wrap" style="height:180px">
+        <canvas id="c-perf" role="img" aria-label="Bar chart of performance ratings 1 to 5"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Gender split</div></div>
+      <div class="legend" id="legend-gender"></div>
+      <div class="chart-wrap" style="height:150px">
+        <canvas id="c-gender" role="img" aria-label="Donut chart of gender split"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Location distribution</div></div>
+      <div class="chart-wrap" style="height:180px">
+        <canvas id="c-loc" role="img" aria-label="Bar chart of employees by location"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Salary + Hire source + Band -->
+  <div class="chart-grid-3">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Avg salary by department</div><div class="card-sub">in ₹ lakhs</div></div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c-sal" role="img" aria-label="Horizontal bar chart of average salary by department"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Hiring source mix</div></div>
+      <div class="legend" id="legend-source"></div>
+      <div class="chart-wrap" style="height:170px">
+        <canvas id="c-source" role="img" aria-label="Donut chart of hiring sources"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Headcount by band</div></div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="c-band" role="img" aria-label="Bar chart of headcount by salary band"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE TABLE -->
+  <div class="table-wrapper">
+    <div class="table-header">
+      <div class="table-title">Employee records</div>
+      <div class="table-meta" id="tbl-count">Showing 50 of 200</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Department</th><th>Location</th>
+          <th>Status</th><th>Type</th><th>Gender</th><th>Band</th>
+          <th>Tenure</th><th>Perf</th><th>Salary</th>
+        </tr>
+      </thead>
+      <tbody id="emp-tbody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer class="footer">
+  All data is synthetic and generated for portfolio / demo purposes only &nbsp;·&nbsp; Employee Lifecycle Dashboard
+</footer>
+
+<script>
+const rng=(()=>{let s=42;return()=>{s=(s*1664525+1013904223)&0xFFFFFFFF;return(s>>>0)/4294967296}})();
+const pick=a=>a[Math.floor(rng()*a.length)];
+const randInt=(a,b)=>Math.floor(rng()*(b-a+1))+a;
+const wPick=(a,w)=>{let r=rng()*w.reduce((s,x)=>s+x,0);for(let i=0;i<a.length;i++){r-=w[i];if(r<=0)return a[i]}return a[a.length-1]};
+
+const DEPTS=["Engineering","Product","Sales","Marketing","HR","Finance","Operations","Legal"];
+const LOCS=["Bengaluru","Mumbai","Delhi","Hyderabad","Chennai","Pune"];
+const ETYPES=["Full-Time","Contract","Intern"];
+const STATUSES=["Active","Inactive","On Leave"];
+const GENDERS=["Male","Female","Non-Binary"];
+const BANDS=["L1","L2","L3","L4","L5"];
+const SOURCES=["LinkedIn","Referral","Job Board","Campus","Agency"];
+const MANAGERS=["Rohan Sharma","Priya Nair","Amit Verma","Sunita Das","Karan Mehta"];
+const FN=["Aarav","Vivaan","Aditya","Vihaan","Arjun","Sai","Ishaan","Priya","Ananya","Trisha","Meera","Nisha","Kavya","Pooja","Divya","Rahul","Ravi","Amit","Suresh","Deepak","Navya","Lakshmi","Sneha","Ritika","Karthik","Manish","Varun","Nikhil","Rohit","Akash"];
+const LN=["Sharma","Nair","Patel","Verma","Singh","Rao","Das","Mehta","Joshi","Menon","Iyer","Reddy","Kumar","Gupta","Agarwal","Bhat","Shah","Pillai"];
+
+function randDate(y1,y2){return new Date(randInt(y1,y2),randInt(0,11),randInt(1,28));}
+const REF=new Date(2024,11,31);
+function tenureYrs(join,exit){return Math.round((((exit||REF)-join)/(1000*60*60*24*365)))*10/10;}
+
+const employees=Array.from({length:200},(_,i)=>{
+  const dept=pick(DEPTS),status=wPick(STATUSES,[75,15,10]);
+  const join=randDate(2018,2023);
+  const exit=status==="Inactive"?randDate(join.getFullYear()+1,2024):null;
+  return {
+    id:`EMP${String(i+1).padStart(4,'0')}`,
+    name:`${pick(FN)} ${pick(LN)}`,
+    dept,gender:pick(GENDERS),age:randInt(22,55),
+    status,join,exit,
+    location:pick(LOCS),manager:pick(MANAGERS),
+    band:pick(BANDS),perf:wPick([1,2,3,4,5],[5,10,35,35,15]),
+    eng:Math.round((rng()*2+3)*10)/10,
+    tenure:Math.max(0,tenureYrs(join,exit)),
+    emptype:wPick(ETYPES,[75,20,5]),
+    salary:randInt(5,40)*50000,
+    source:pick(SOURCES)
+  };
+});
+
+const uniq=(arr,fn)=>[...new Set(arr.map(fn))].sort();
+
+function populateFilter(id,vals){
+  const s=document.getElementById(id);
+  const cur=s.value;
+  while(s.options.length>1)s.remove(1);
+  vals.forEach(v=>s.add(new Option(v,v)));
+  if(cur)s.value=cur;
+}
+populateFilter('f-dept',DEPTS.sort());
+populateFilter('f-status',STATUSES);
+populateFilter('f-gender',GENDERS);
+populateFilter('f-location',LOCS.sort());
+populateFilter('f-emptype',ETYPES);
+
+['f-dept','f-status','f-gender','f-location','f-emptype'].forEach(id=>
+  document.getElementById(id).addEventListener('change',update)
+);
+function resetFilters(){
+  ['f-dept','f-status','f-gender','f-location','f-emptype'].forEach(id=>document.getElementById(id).value='');
+  update();
+}
+
+function getFiltered(){
+  const d=document.getElementById('f-dept').value;
+  const s=document.getElementById('f-status').value;
+  const g=document.getElementById('f-gender').value;
+  const l=document.getElementById('f-location').value;
+  const t=document.getElementById('f-emptype').value;
+  return employees.filter(e=>(!d||e.dept===d)&&(!s||e.status===s)&&(!g||e.gender===g)&&(!l||e.location===l)&&(!t||e.emptype===t));
+}
+
+const MONTHS=[];
+for(let y=2023;y<=2024;y++)for(let m=0;m<12;m++)MONTHS.push({y,m,label:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]+' '+String(y).slice(2)});
+
+const BLUE='#2563eb',TEAL='#0d9488',RED='#dc2626',AMBER='#d97706',PURPLE='#7c3aed',GREEN='#16a34a',CORAL='#e05a30',PINK='#be185d',GRAY='#64748b';
+const PALETTE=[BLUE,TEAL,AMBER,PURPLE,CORAL,RED,GREEN,PINK,GRAY];
+
+const textColor='#5a6a7e', gridColor='rgba(0,0,0,0.06)';
+const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{}}},animation:{duration:250}};
+
+function mkChart(id,type,labels,datasets,extraOpts={}){
+  const el=document.getElementById(id);
+  if(el._chart)el._chart.destroy();
+  const c=new Chart(el.getContext('2d'),{
+    type,
+    data:{labels,datasets},
+    options:{...baseOpts,
+      scales:type==='doughnut'?{}:{
+        x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10}}},
+        y:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10}}}
+      },
+      ...extraOpts
+    }
+  });
+  el._chart=c;
+  return c;
+}
+
+function buildLegend(id,labels,colors,data){
+  const total=data.reduce((a,b)=>a+b,0);
+  document.getElementById(id).innerHTML=labels.map((l,i)=>`
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]}"></span>
+      ${l} <strong style="margin-left:2px">${total?Math.round(data[i]/total*100):0}%</strong>
+    </div>`).join('');
+}
+
+function countBy(arr,fn){const m={};arr.forEach(e=>{const k=fn(e);m[k]=(m[k]||0)+1});return m;}
+function avgBy(arr,gFn,vFn){const m={};arr.forEach(e=>{const k=gFn(e);if(!m[k])m[k]=[];m[k].push(vFn(e))});const r={};Object.entries(m).forEach(([k,v])=>{r[k]=v.reduce((a,b)=>a+b)/v.length});return r;}
+
+function update(){
+  const data=getFiltered();
+  const n=data.length;
+  const active=data.filter(e=>e.status==='Active').length;
+  const inactive=data.filter(e=>e.status==='Inactive').length;
+  const attrPct=n?(inactive/n*100).toFixed(1):0;
+  const avgTenure=n?(data.reduce((a,e)=>a+e.tenure,0)/n).toFixed(1):0;
+  const avgAge=n?Math.round(data.reduce((a,e)=>a+e.age,0)/n):0;
+  const hp=data.filter(e=>e.perf>=4).length;
+
+  document.getElementById('k-total').textContent=n.toLocaleString();
+  document.getElementById('k-total-s').textContent=uniq(data,e=>e.dept).length+' departments';
+  document.getElementById('k-active').textContent=active.toLocaleString();
+  document.getElementById('k-active-s').textContent=(n?Math.round(active/n*100):0)+'% of total';
+  document.getElementById('k-attr').textContent=attrPct+'%';
+  document.getElementById('k-attr-s').textContent=inactive+' exits recorded';
+  document.getElementById('k-tenure').textContent=avgTenure+' yrs';
+  document.getElementById('k-tenure-s').textContent='average per employee';
+  document.getElementById('k-age').textContent=avgAge;
+  document.getElementById('k-age-s').textContent='years average';
+  document.getElementById('k-hp').textContent=hp;
+  document.getElementById('k-hp-s').textContent=(n?Math.round(hp/n*100):0)+'% rated 4+';
+  document.getElementById('last-updated').textContent=`${n} of 200 employees`;
+
+  // Dept bar
+  const dc=countBy(data,e=>e.dept);
+  const dLabels=Object.keys(dc).sort();
+  mkChart('c-dept','bar',dLabels,[{data:dLabels.map(d=>dc[d]),backgroundColor:BLUE,borderRadius:3,borderSkipped:false}]);
+
+  // Monthly line
+  const hires=MONTHS.map(({y,m})=>data.filter(e=>e.join.getFullYear()===y&&e.join.getMonth()===m).length);
+  const exits=MONTHS.map(({y,m})=>data.filter(e=>e.exit&&e.exit.getFullYear()===y&&e.exit.getMonth()===m).length);
+  mkChart('c-monthly','line',MONTHS.map(x=>x.label),[
+    {label:'Hires',data:hires,borderColor:TEAL,backgroundColor:'rgba(13,148,136,0.08)',tension:0.4,pointRadius:2,fill:true,borderWidth:2},
+    {label:'Exits',data:exits,borderColor:RED,backgroundColor:'transparent',tension:0.4,pointRadius:2,borderDash:[4,3],borderWidth:1.5}
+  ],{plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10}}}}});
+
+  // Perf
+  const perfData=[1,2,3,4,5].map(p=>data.filter(e=>e.perf===p).length);
+  mkChart('c-perf','bar',['1 ★','2 ★','3 ★','4 ★','5 ★'],[{data:perfData,backgroundColor:[RED,'#f97316',AMBER,TEAL,GREEN],borderRadius:3,borderSkipped:false}]);
+
+  // Gender donut
+  const gc=countBy(data,e=>e.gender);
+  const gLabels=Object.keys(gc).sort();
+  const gColors=[BLUE,PURPLE,TEAL];
+  buildLegend('legend-gender',gLabels,gColors,gLabels.map(g=>gc[g]));
+  mkChart('c-gender','doughnut',gLabels,[{data:gLabels.map(g=>gc[g]),backgroundColor:gColors,borderWidth:0}],{cutout:'62%'});
+
+  // Location
+  const lc=countBy(data,e=>e.location);
+  const lLabels=Object.keys(lc).sort();
+  mkChart('c-loc','bar',lLabels,[{data:lLabels.map(l=>lc[l]),backgroundColor:PURPLE,borderRadius:3,borderSkipped:false}]);
+
+  // Salary horiz
+  const sa=avgBy(data,e=>e.dept,e=>e.salary);
+  const sLabels=Object.keys(sa).sort();
+  mkChart('c-sal','bar',sLabels,[{data:sLabels.map(d=>Math.round(sa[d]/100000*10)/10),backgroundColor:AMBER,borderRadius:3,borderSkipped:false}],
+    {indexAxis:'y',scales:{x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10},callback:v=>v+'L'}},y:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10}}}}});
+
+  // Source donut
+  const sc=countBy(data,e=>e.source);
+  const srcLabels=Object.keys(sc).sort();
+  const srcColors=[BLUE,TEAL,AMBER,CORAL,PURPLE];
+  buildLegend('legend-source',srcLabels,srcColors,srcLabels.map(s=>sc[s]));
+  mkChart('c-source','doughnut',srcLabels,[{data:srcLabels.map(s=>sc[s]),backgroundColor:srcColors,borderWidth:0}],{cutout:'60%'});
+
+  // Band
+  const bc=countBy(data,e=>e.band);
+  const bLabels=['L1','L2','L3','L4','L5'].filter(b=>bc[b]);
+  mkChart('c-band','bar',bLabels,[{data:bLabels.map(b=>bc[b]||0),backgroundColor:TEAL,borderRadius:3,borderSkipped:false}]);
+
+  // Table
+  const rows=data.slice(0,50);
+  document.getElementById('emp-tbody').innerHTML=rows.map(e=>{
+    const badge=e.status==='Active'?'badge-active':e.status==='Inactive'?'badge-inactive':'badge-leave';
+    const sal='₹'+(e.salary/100000).toFixed(1)+'L';
+    const pips=[1,2,3,4,5].map(p=>`<div class="perf-pip${p<=e.perf?' filled':''}"></div>`).join('');
+    return `<tr>
+      <td class="id-cell">${e.id}</td>
+      <td style="font-weight:500">${e.name}</td>
+      <td>${e.dept}</td>
+      <td>${e.location}</td>
+      <td><span class="badge ${badge}">${e.status}</span></td>
+      <td style="color:var(--text-secondary)">${e.emptype}</td>
+      <td style="color:var(--text-secondary)">${e.gender}</td>
+      <td><span style="font-weight:500;font-size:11px;background:#f1f5f9;padding:1px 6px;border-radius:4px">${e.band}</span></td>
+      <td>${e.tenure.toFixed(1)} yrs</td>
+      <td><div class="perf-bar">${pips}</div></td>
+      <td style="font-weight:500">${sal}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tbl-count').textContent=`Showing ${Math.min(50,data.length)} of ${data.length}`;
+}
+
+update();
+</script>
+</body>
+</html>
