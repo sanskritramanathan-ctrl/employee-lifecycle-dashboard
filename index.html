@@ -668,7 +668,7 @@ document.getElementById('summary3').innerHTML=src?`<div style="color:#64748b;fon
   mkChart('c-band','bar',bLabels,[{data:bLabels.map(b=>bc[b]||0),backgroundColor:TEAL,borderRadius:3,borderSkipped:false}]);
 
   // Table
-  const rows=data.slice(0,50);
+  const rows=data;
   document.getElementById('emp-tbody').innerHTML=rows.map(e=>{
     const badge=e.status==='Active'?'badge-active':e.status==='Inactive'?'badge-inactive':'badge-leave';
     const sal='₹'+(e.salary/100000).toFixed(1)+'L';
@@ -687,7 +687,7 @@ document.getElementById('summary3').innerHTML=src?`<div style="color:#64748b;fon
       <td style="font-weight:500">${sal}</td>
     </tr>`;
   }).join('');
-  document.getElementById('tbl-count').textContent=`Showing ${Math.min(50,data.length)} of ${data.length}`;
+  document.getElementById('tbl-count').textContent=`Showing ${data.length} employees`;
 }
 
 loadEmployees();
