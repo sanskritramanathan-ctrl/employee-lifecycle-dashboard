@@ -255,7 +255,10 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
-    <span id="last-updated" class="filter-count">200 employees</span>
+    <div style="display:flex;gap:10px;align-items:center">
+  <span id="last-updated" class="filter-count">Loading...</span>
+  <span id="refresh-time" class="filter-count">Updated —</span>
+</div>
     <span class="header-badge">Dummy Data · Portfolio</span>
   </div>
 </header>
@@ -275,6 +278,24 @@
 
   <!-- KPI CARDS -->
   <div class="kpi-grid">
+  <div class="chart-grid-2" style="margin-bottom:16px">
+
+<div class="card">
+<div class="card-title">Executive Summary</div>
+
+<div style="margin-top:12px;display:grid;gap:10px">
+
+<div id="summary1">Largest department —</div>
+
+<div id="summary2">Highest avg salary —</div>
+
+<div id="summary3">Top hiring source —</div>
+
+</div>
+
+</div>
+
+</div>
     <div class="kpi-card" style="--accent-color:#2563eb">
       <div class="kpi-label">Total employees</div>
       <div class="kpi-value" id="k-total">—</div>
@@ -546,6 +567,39 @@ function update(){
   const avgTenure=n?(data.reduce((a,e)=>a+e.tenure,0)/n).toFixed(1):0;
   const avgAge=n?Math.round(data.reduce((a,e)=>a+e.age,0)/n):0;
   const hp=data.filter(e=>e.perf>=4).length;
+  const deptCount=countBy(data,e=>e.dept);
+
+const largest=
+Object.entries(deptCount)
+.sort((a,b)=>b[1]-a[1])[0];
+
+document.getElementById('summary1').textContent=
+largest?
+`Largest department: ${largest[0]} (${largest[1]})`
+:
+'-';
+
+const sal=avgBy(data,e=>e.dept,e=>e.salary);
+
+const highest=
+Object.entries(sal)
+.sort((a,b)=>b[1]-a[1])[0];
+
+document.getElementById('summary2').textContent=
+highest?
+`Highest avg salary: ${highest[0]}`:
+'-';
+
+const source=countBy(data,e=>e.source);
+
+const src=
+Object.entries(source)
+.sort((a,b)=>b[1]-a[1])[0];
+
+document.getElementById('summary3').textContent=
+src?
+`Top hiring source: ${src[0]}`:
+'-';
 
   document.getElementById('k-total').textContent=n.toLocaleString();
   document.getElementById('k-total-s').textContent=uniq(data,e=>e.dept).length+' departments';
@@ -560,6 +614,8 @@ function update(){
   document.getElementById('k-hp').textContent=hp;
   document.getElementById('k-hp-s').textContent=(n?Math.round(hp/n*100):0)+'% rated 4+';
   document.getElementById('last-updated').textContent=`${n} of 200 employees`;
+  document.getElementById('refresh-time').textContent=
+'Updated · '+new Date().toLocaleString();
 
   // Dept bar
   const dc=countBy(data,e=>e.dept);
