@@ -275,36 +275,8 @@
     <select id="f-emptype"><option value="">All types</option></select>
     <button class="reset-btn" onclick="resetFilters()">Reset</button>
   </div>
-
-  <!-- KPI CARDS -->
-  <div class="kpi-grid">
-  <div class="card" style="
-margin-bottom:18px;
-padding:14px 20px;
-">
-
-<div class="card-title">
-Executive Summary
-</div>
-
-<div style="
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:18px;
-margin-top:14px;
-">
-
-<div id="summary1"></div>
-
-<div id="summary2"></div>
-
-<div id="summary3"></div>
-
-</div>
-
-</div>
-
-</div>
+<!-- KPI CARDS -->
+<div class="kpi-grid">
     <div class="kpi-card" style="--accent-color:#2563eb">
       <div class="kpi-label">Total employees</div>
       <div class="kpi-value" id="k-total">—</div>
@@ -337,7 +309,26 @@ margin-top:14px;
     </div>
   </div>
 
-  <!-- ROW 1: Dept headcount + Monthly trend -->
+  
+<!-- EXEC SUMMARY -->
+<div class="card" style="margin-bottom:18px;padding:18px 24px">
+<div style="display:grid;grid-template-columns:220px 1fr 1fr 1fr;gap:20px;align-items:center">
+<div style="font-size:22px;font-weight:700;color:#1a2332">Executive<br>Summary</div>
+<div id="summary1" style="padding-left:18px;border-left:1px solid #e2e6ec"></div>
+<div id="summary2" style="padding-left:18px;border-left:1px solid #e2e6ec"></div>
+<div id="summary3" style="padding-left:18px;border-left:1px solid #e2e6ec"></div>
+</div>
+</div>
+
+<!-- SEARCH -->
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div class="card-title">Search Employee</div>
+<input id="emp-search" placeholder="Search by employee, department, ID…" style="width:360px;padding:10px 14px;border:1px solid #e2e6ec;border-radius:8px">
+</div>
+</div>
+
+<!-- ROW 1: Dept headcount + Monthly trend -->
   <div class="chart-grid-2">
     <div class="card">
       <div class="card-header">
@@ -484,38 +475,16 @@ async function loadEmployees(){
       source:c[15]||""
     };
   });
-populateFilter('f-dept',[...new Set(employees.map(e=>e.dept))].filter(Boolean).sort());
 
-populateFilter('f-status',[...new Set(employees.map(e=>e.status))].filter(Boolean));
-
-populateFilter('f-gender',[...new Set(employees.map(e=>e.gender))].filter(Boolean));
-
-populateFilter('f-location',[...new Set(employees.map(e=>e.location))].filter(Boolean).sort());
-
-populateFilter('f-emptype',[...new Set(employees.map(e=>e.emptype))].filter(Boolean));
-  update();
-}
-
-const uniq=(arr,fn)=>[...new Set(arr.map(fn))].sort();
-
-function populateFilter(id,vals){
-  const s=document.getElementById(id);
-  const cur=s.value;
-  while(s.options.length>1)s.remove(1);
-  vals.forEach(v=>s.add(new Option(v,v)));
-  if(cur)s.value=cur;
-}
-populateFilter('f-dept',DEPTS.sort());
-populateFilter('f-status',STATUSES);
-populateFilter('f-gender',GENDERS);
-populateFilter('f-location',LOCS.sort());
-populateFilter('f-emptype',ETYPES);
+document.getElementById('emp-search')?.addEventListener('input',update);
 
 ['f-dept','f-status','f-gender','f-location','f-emptype'].forEach(id=>
   document.getElementById(id).addEventListener('change',update)
 );
 function resetFilters(){
-  ['f-dept','f-status','f-gender','f-location','f-emptype'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('emp-search')?.addEventListener('input',update);
+
+['f-dept','f-status','f-gender','f-location','f-emptype'].forEach(id=>document.getElementById(id).value='');
   update();
 }
 
@@ -525,7 +494,11 @@ function getFiltered(){
   const g=document.getElementById('f-gender').value;
   const l=document.getElementById('f-location').value;
   const t=document.getElementById('f-emptype').value;
-  return employees.filter(e=>(!d||e.dept===d)&&(!s||e.status===s)&&(!g||e.gender===g)&&(!l||e.location===l)&&(!t||e.emptype===t));
+  const q=(document.getElementById('emp-search')?.value||'').toLowerCase();
+return employees.filter(e=>
+(!d||e.dept===d)&&(!s||e.status===s)&&(!g||e.gender===g)&&(!l||e.location===l)&&(!t||e.emptype===t)&&
+(!q||e.name.toLowerCase().includes(q)||String(e.id).toLowerCase().includes(q)||e.dept.toLowerCase().includes(q))
+);
 }
 
 const MONTHS=[];
@@ -582,33 +555,9 @@ const largest=
 Object.entries(deptCount)
 .sort((a,b)=>b[1]-a[1])[0];
 
-document.getElementById('summary1').textContent=
-largest?
-`Largest department: ${largest[0]} (${largest[1]})`
-:
-'-';
-
-const sal=avgBy(data,e=>e.dept,e=>e.salary);
-
-const highest=
-Object.entries(sal)
-.sort((a,b)=>b[1]-a[1])[0];
-
-document.getElementById('summary2').textContent=
-highest?
-`Highest avg salary: ${highest[0]}`:
-'-';
-
-const source=countBy(data,e=>e.source);
-
-const src=
-Object.entries(source)
-.sort((a,b)=>b[1]-a[1])[0];
-
-document.getElementById('summary3').textContent=
-src?
-`Top hiring source: ${src[0]}`:
-'-';
+document.getElementById('summary1').innerHTML=largest?`<div style="color:#64748b;font-size:12px">Largest department</div><div style="font-size:20px;font-weight:700;color:#2563eb">${largest[0]}</div><div>${largest[1]} employees</div>`:'-';
+document.getElementById('summary2').innerHTML=highest?`<div style="color:#64748b;font-size:12px">Highest avg salary</div><div style="font-size:20px;font-weight:700;color:#16a34a">${highest[0]}</div>`:'-';
+document.getElementById('summary3').innerHTML=src?`<div style="color:#64748b;font-size:12px">Top hiring source</div><div style="font-size:20px;font-weight:700;color:#7c3aed">${src[0]}</div>`:'-';
 
   document.getElementById('k-total').textContent=n.toLocaleString();
   document.getElementById('k-total-s').textContent=uniq(data,e=>e.dept).length+' departments';
