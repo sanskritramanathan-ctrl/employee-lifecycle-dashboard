@@ -454,7 +454,15 @@ async function loadEmployees(){
       source:c[15]||""
     };
   });
+populateFilter('f-dept',[...new Set(employees.map(e=>e.dept))].filter(Boolean).sort());
 
+populateFilter('f-status',[...new Set(employees.map(e=>e.status))].filter(Boolean));
+
+populateFilter('f-gender',[...new Set(employees.map(e=>e.gender))].filter(Boolean));
+
+populateFilter('f-location',[...new Set(employees.map(e=>e.location))].filter(Boolean).sort());
+
+populateFilter('f-emptype',[...new Set(employees.map(e=>e.emptype))].filter(Boolean));
   update();
 }
 
