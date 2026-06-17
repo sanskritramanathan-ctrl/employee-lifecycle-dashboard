@@ -422,24 +422,41 @@ function randDate(y1,y2){return new Date(randInt(y1,y2),randInt(0,11),randInt(1,
 const REF=new Date(2024,11,31);
 function tenureYrs(join,exit){return Math.round((((exit||REF)-join)/(1000*60*60*24*365)))*10/10;}
 
-const employees=Array.from({length:200},(_,i)=>{
-  const dept=pick(DEPTS),status=wPick(STATUSES,[85,15]);
-  const join=randDate(2018,2023);
-  const exit=status==="Inactive"?randDate(join.getFullYear()+1,2024):null;
-  return {
-    id:`EMP${String(i+1).padStart(4,'0')}`,
-    name:`${pick(FN)} ${pick(LN)}`,
-    dept,gender:pick(GENDERS),age:randInt(22,55),
-    status,join,exit,
-    location:pick(LOCS),manager:pick(MANAGERS),
-    band:pick(BANDS),perf:wPick([1,2,3,4,5],[5,10,35,35,15]),
-    eng:Math.round((rng()*2+3)*10)/10,
-    tenure:Math.max(0,tenureYrs(join,exit)),
-    emptype:wPick(ETYPES,[75,20,5]),
-    salary:randInt(5,40)*50000,
-    source:pick(SOURCES)
-  };
-});
+const SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQIdWHRWSaUnPe6P0w808FMCs_9L2IVRaBfkMo9Jy2laYZBEfju0Gxf90isdAE6JC4BiM8_ThRDb0eK/pub?output=csv";
+
+let employees=[];
+
+async function loadEmployees(){
+  const res=await fetch(SHEET_URL);
+  const text=await res.text();
+
+  const rows=text.trim().split('\n');
+
+  employees=rows.slice(1).map(r=>{
+    const c=r.split(',');
+
+    return{
+      id:c[0]||"",
+      name:c[1]||"",
+      dept:c[2]||"",
+      gender:c[3]||"",
+      age:Number(c[4])||0,
+      status:c[5]||"",
+      join:c[6]?new Date(c[6]):new Date(),
+      exit:c[7]?new Date(c[7]):null,
+      location:c[8]||"",
+      manager:c[9]||"",
+      band:c[10]||"",
+      perf:Number(c[11])||0,
+      tenure:Number(c[12])||0,
+      emptype:c[13]||"",
+      salary:Number(c[14])||0,
+      source:c[15]||""
+    };
+  });
+
+  update();
+}
 
 const uniq=(arr,fn)=>[...new Set(arr.map(fn))].sort();
 
@@ -606,7 +623,7 @@ function update(){
   document.getElementById('tbl-count').textContent=`Showing ${Math.min(50,data.length)} of ${data.length}`;
 }
 
-update();
+loadEmployees();
 </script>
 </body>
 </html>
