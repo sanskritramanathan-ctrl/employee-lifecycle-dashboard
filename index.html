@@ -446,6 +446,28 @@ function tenureYrs(join,exit){return Math.round((((exit||REF)-join)/(1000*60*60*
 const SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQIdWHRWSaUnPe6P0w808FMCs_9L2IVRaBfkMo9Jy2laYZBEfju0Gxf90isdAE6JC4BiM8_ThRDb0eK/pub?output=csv";
 
 let employees=[];
+function populateFilter(id, vals){
+  const s = document.getElementById(id);
+
+  if(!s) return;
+
+  const current = s.value;
+
+  while(s.options.length > 1){
+    s.remove(1);
+  }
+
+  vals.forEach(v=>{
+    s.add(new Option(v,v));
+  });
+
+  if(current){
+    s.value=current;
+  }
+}
+function uniq(arr, fn){
+  return [...new Set(arr.map(fn))].sort();
+}
 
 async function loadEmployees(){
   const res=await fetch(SHEET_URL);
