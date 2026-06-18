@@ -1,6 +1,6 @@
 # 📊 Employee Lifecycle Dashboard
 
-### People Analytics • Workforce Intelligence • FY 2024
+### People Analytics • Workforce Intelligence
 
 Interactive HR Analytics Dashboard built using HTML, CSS, JavaScript and spreadsheet-driven data.
 
